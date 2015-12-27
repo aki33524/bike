@@ -1,7 +1,15 @@
 #coding:utf-8
+from misc import hubeny
 
 def interpolation(points):
+    # FIXM: pointsが変わる副作用がある
     num = len(points)
+    
+    distances = [0]*num
+    for i in range(1, num):
+        distances[i] = distances[i-1] + hubeny(points[i-1][1], points[i][1])
+    for i in range(num):
+        points[i][1] = distances[i]
     
     start, goal = sum(points[0][0])/2, sum(points[num-1][0])/2
     L = []
@@ -56,8 +64,7 @@ def interpolation(points):
         sections.append((L[ly], points[ly][1]))
         last_point = (L[ly], ly)
     length += ((goal - last_point[0]) ** 2 + (points[num-1][1] - points[last_point[1]][1]) ** 2) ** 0.5
-    sections.append((last_point[0], points[last_point[1]][1]))
-
+    sections.append((goal, points[num-1][1]))
     return sections
     
     

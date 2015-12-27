@@ -11,7 +11,7 @@ def get_points(filename, resolution=0):
     for v in root[0][0]:
         lat, lon = float(v.attrib["lat"]), float(v.attrib["lon"])
         ele = float(v[0].text)
-        point = ((ele+resolution, ele-resolution), (lat, lon))
+        point = [(ele+resolution, ele-resolution), (lat, lon)]
         points.append(point)
     
     return points

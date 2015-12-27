@@ -1,22 +1,9 @@
 #coding:utf-8
+from crank import Crank
+from wheel import Wheel
+
 G = 9.8
-SPAN = 0.01
-
-class Wheel():
-    def __init__(self, weight, R):
-        self.weight = weight
-        self.R = R
-
-    @property
-    def I(self):
-        # 簡単のため質点が外周にあるとする
-        # チューブ+タイヤを300gとする
-        tire = 0.3
-        return self.R**2 * (self.weight + tire)
-
-class Crank():
-    def __init__(self, length):
-        self.length = length
+SPAN = 0.1
         
 class Bicycle():
     def __init__(self, front_weight, rear_weight, front_wheel, rear_wheel, crank):

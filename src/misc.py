@@ -1,6 +1,7 @@
-# Thanks to http://blogs.yahoo.co.jp/qga03052/33991636.html
+#coding:utf-8
 import math
 
+# Thanks to http://blogs.yahoo.co.jp/qga03052/33991636.html
 def deg2rad(deg):
     return( deg * (2 * math.pi) / 360 )
 
@@ -25,3 +26,17 @@ def hubeny(p1, p2) :
     dxncos=dx*n*math.cos(my)
     
     return( math.sqrt( dym**2 + dxncos**2) )
+
+def points_to_sections(points):
+    # FIXME: 便宜上作るがゆくゆくは消したい
+    sections = []
+    signals = []
+    for i in range(len(points)-1):
+        p, q = points[i], points[i+1]
+        sections.append((q[1]-p[1], q[0]-p[0]))
+        signals.append((100, (0, 0)))
+    
+    return sections, signals
+    
+    
+    
