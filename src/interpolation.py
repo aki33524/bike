@@ -1,6 +1,6 @@
 #coding:utf-8
 
-def func(points):
+def interpolation(points):
     num = len(points)
     
     start, goal = sum(points[0][0])/2, sum(points[num-1][0])/2
@@ -57,61 +57,9 @@ def func(points):
         last_point = (L[ly], ly)
     length += ((goal - last_point[0]) ** 2 + (points[num-1][1] - points[last_point[1]][1]) ** 2) ** 0.5
     sections.append((last_point[0], points[last_point[1]][1]))
-    
-    
-#     print length
-#     for v in sections:
-#         print "%f\t%f" % (v[0], v[1])
+
     return sections
-#     print len(sections)
-
-f = open("katsuoji.txt")
-resolution = 9
-
-spoints = []
-while True:
-    points = []
-    try:
-        num, distance = map(int, f.readline().split())
-    except ValueError:
-        break
-    for i in range(num):
-        height, lat, lng = map(float, f.readline().split())
-        points.append([(height+resolution, height-resolution), (lat, lng)])    
-
-    distances = []
-    for i in range(len(points)):
-        if i == 0:
-            distances.append(0)
-        else:
-            u, v = points[i-1][1], points[i][1]
-            distances.append(((u[0]-v[0])**2 + (u[1]-v[1])**2)**0.5)
-    
-    for i, point in enumerate(points):
-        point[1] = distance * distances[i] / sum(distances)
-    
-    spoints += points
-    
-for i in range(1, len(spoints)):
-    spoints[i][1] += spoints[i-1][1]
-    
-# for point in spoints:
-#     print point
-
-sections = func(spoints)
-for section in sections:
-    print "%f\t%f" %section
-
-# sections = []
-# for i in range(5):
-#     sections += func(f, resolution)
     
     
-# d = sum(section[1] for section in sections)
-# print d
-# for section in sections:
-#     section[1] = distance * section[1] / d
-# 
-# for section in sections:
-#     print section
+    
     
