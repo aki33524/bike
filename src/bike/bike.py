@@ -1,6 +1,7 @@
 #coding:utf-8
 from crank import Crank
 from wheel import Wheel
+from fatigue.fatigue import get_fatigue_func_by_level, get_fatigue_func
 
 G = 9.8
 SPAN = 0.1
@@ -14,11 +15,14 @@ class Bicycle():
         self.crank = crank
         
 class Rider():
-    def __init__(self, height, weight, watt, bicycle):
+    def __init__(self, height, weight, level, bicycle):
         self.height = height
         self.weight = weight
         self.bicycle = bicycle
-        self.watt = watt
+        self.level = level
+        self.fatigue_func = self.get_fatigue_func()
+        
+        
     @property
     def front_weight(self):
         return self.weight*0.4 + self.bicycle.front_weight - self.bicycle.front_wheel.weight
@@ -35,7 +39,11 @@ class Rider():
     def W(self, v, x, wv=0):
         M = self.all_weight
         return v * ((0.1 * x + 0.05) * M + 0.15 * (v+wv)**2)
-    def acceleration(self, w, v, x=0, boost=False):
+    
+    def get_fatigue_func(self):
+        return get_fatigue_func_by_level(self.level)
+    
+    def acceleration(self, w, v, x=0):
         if v < 0:
             raise Exception("バックするな💢")
         
@@ -51,9 +59,6 @@ class Rider():
         else:
             f = min(w/v, mf)
             resistor += 0.005 * M * G   # 転がり抵抗
-            
-        if boost:
-            f *= 2
             
         resistor += 0.01 * x * M * G    # 傾斜抵抗
         resistor += self.K * v**2       # 空気抵抗
@@ -71,59 +76,45 @@ class Rider():
                 ub = mid
         return mid
     
-    def get_time_by_splitted_course(self, splitted, signal, st=0):
-        ok = True
-        t = 0
-        vel = 0
-        for i, v in enumerate(splitted):
-            s = signal[i]
-            per = s[0]
-            bs, be = s[1]
-#                 bs += 5
-#                 be -= 5
-            if bs >= be:
-                be += per
-            ok &= (bs <= t % per <= be or bs <= t % per + 100 <= be)
-            
-            d = 0
-            boosttime = 0
-            while d < v[0]:
-                vel += self.acceleration(self.watt, vel, v[1] * 100. / v[0], boosttime>0) * SPAN
-                d += vel * SPAN
-                t += SPAN
-                boosttime -= SPAN
-                
-        return t-st, ok
-    
-    def get_watt_by_splitted_course(self, alltime, splitted, signal, st=0):
-        alltime += st
+    def get_time_by_splitted_course(self, splitted, watt=None):
         lb = 0
         ub = 10000
-        for _ in range(100):
-            ok = True
+        for _ in range(30):
             mid = (lb + ub) / 2.
-            t = st
+            if watt is None:
+                w = self.fatigue_func(mid) * self.weight
+            else:
+                w = watt
+            t = 0
             vel = 0
-            for i, v in enumerate(splitted):
-                s = signal[i]
-                per = s[0]
-                bs, be = s[1]
-    #                 bs += 5
-    #                 be -= 5
-                if bs >= be:
-                    be += per
-                ok &= (bs <= t % per <= be or bs <= t % per + 100 <= be)
-                
+            for v in splitted:
                 d = 0
-                boosttime = 0
                 while d < v[0]:
-                    vel += self.acceleration(mid, vel, v[1] * 100. / v[0], boosttime>0) * SPAN
+                    vel += self.acceleration(w, vel, v[1] * 100. / v[0]) * SPAN
                     d += vel * SPAN
                     t += SPAN
-                    boosttime -= SPAN
                     
+            if watt is not None:
+                return t
+                    
+            if mid < t:
+                lb = mid
+            else:
+                ub = mid
+        return mid
+    
+    def get_watt_by_splitted_course(self, alltime, splitted):
+        lb = 0
+        ub = 30 * self.weight
+        for _ in range(30):
+            mid = (lb + ub) / 2.
+            t = self.get_time_by_splitted_course(splitted, mid)
             if t > alltime:
                 lb = mid
             else:
                 ub = mid
-        return mid, ok
+        return mid
+    
+    def get_level(self, t, watt):
+        return get_fatigue_func(t, float(watt)/self.weight)[:2]
+        
