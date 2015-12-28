@@ -30,13 +30,11 @@ def hubeny(p1, p2) :
 def points_to_sections(points):
     # FIXME: 便宜上作るがゆくゆくは消したい
     sections = []
-    signals = []
     for i in range(len(points)-1):
         p, q = points[i], points[i+1]
         sections.append((q[1]-p[1], q[0]-p[0]))
-        signals.append((100, (0, 0)))
     
-    return sections, signals
+    return sections
     
     
     

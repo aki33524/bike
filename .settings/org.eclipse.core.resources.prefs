@@ -1,0 +1,12 @@
+eclipse.preferences.version=1
+encoding//src/bike/__init__.py=utf-8
+encoding//src/bike/bike.py=utf-8
+encoding//src/bike/crank.py=utf-8
+encoding//src/bike/wheel.py=utf-8
+encoding//src/fatigue/__init__.py=utf-8
+encoding//src/fatigue/fatigue.py=utf-8
+encoding//src/google.py=utf-8
+encoding//src/interpolation.py=utf-8
+encoding//src/main.py=utf-8
+encoding//src/misc.py=utf-8
+encoding//src/rootlab.py=utf-8

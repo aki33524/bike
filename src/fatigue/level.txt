@@ -1,0 +1,8 @@
+5	World class (e.g., international pro)
+11	Exceptional (e.g., domestic pro)
+17	Excellent (e.g., cat. 1)
+23	Very good (e.g., cat. 2)
+30	Good (e.g., cat. 3)
+36	Moderate (e.g., cat. 4)
+42	Fair (e.g., cat. 5)
+48	Untrained (e.g., non-racer)
