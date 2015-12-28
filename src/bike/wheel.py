@@ -1,5 +1,5 @@
 #coding:utf-8
-class Wheel():
+class Wheel(object):
     def __init__(self, weight, R):
         self.weight = weight
         self.R = R

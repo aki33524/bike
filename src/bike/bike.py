@@ -6,7 +6,7 @@ from fatigue.fatigue import get_fatigue_func_by_level, get_fatigue_func
 G = 9.8
 SPAN = 0.1
         
-class Bicycle():
+class Bicycle(object):
     def __init__(self, front_weight, rear_weight, front_wheel, rear_wheel, crank):
         self.front_weight = front_weight
         self.rear_weight = rear_weight
@@ -14,12 +14,12 @@ class Bicycle():
         self.rear_wheel = rear_wheel
         self.crank = crank
         
-class Rider():
+class Rider(object):
     def __init__(self, height, weight, level, bicycle):
         self.height = height
         self.weight = weight
         self.bicycle = bicycle
-        self.level = level
+        self._level = level
         self.fatigue_func = self.get_fatigue_func()
         
         
@@ -39,6 +39,13 @@ class Rider():
     def W(self, v, x, wv=0):
         M = self.all_weight
         return v * ((0.1 * x + 0.05) * M + 0.15 * (v+wv)**2)
+    
+    def _get_level(self):
+        return self._level
+    def _set_level(self, value):
+        self._level = value
+        self.fatigue_func = self.get_fatigue_func()
+    level = property(_get_level, _set_level)
     
     def get_fatigue_func(self):
         return get_fatigue_func_by_level(self.level)
@@ -64,6 +71,7 @@ class Rider():
         resistor += self.K * v**2       # 空気抵抗
         
         I = self.bicycle.front_wheel.I + self.bicycle.rear_wheel.I #慣性モーメント
+        
         return (f - resistor) * R**2 / (R**2 * M + I)
     def get_speed_by_grad(self, w, x):
         lb = 0
@@ -89,10 +97,18 @@ class Rider():
             vel = 0
             for v in splitted:
                 d = 0
+                pacceleration = -1
                 while d < v[0]:
-                    vel += self.acceleration(w, vel, v[1] * 100. / v[0]) * SPAN
-                    d += vel * SPAN
-                    t += SPAN
+                    # 実用上問題ない誤差を含む
+                    acceleration = self.acceleration(w, vel, v[1] * 100. / v[0])
+                    if acceleration == pacceleration:
+                        t += (v[0] - d) / vel
+                        d = v[0]
+                    else:
+                        vel += acceleration * SPAN
+                        d += vel * SPAN
+                        t += SPAN
+                    pacceleration = acceleration
                     
             if watt is not None:
                 return t
