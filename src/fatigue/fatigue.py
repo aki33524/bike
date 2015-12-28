@@ -53,13 +53,13 @@ def get_fatigue_func_by_level(level):
     
     return func
 
-def get_fatigue_func(t, watt):
+def get_fatigue_func(t, ratio):
     lb = 0
     ub = len(WEIGHT_POWER_RATIO)
     
     while lb + 1 < ub:
         mid = (lb + ub)/2
-        if watt < get_fatigue_func_by_idx(mid)(t):
+        if ratio < get_fatigue_func_by_idx(mid)(t):
             lb = mid
         else:
             ub = mid
@@ -73,9 +73,9 @@ def get_fatigue_func(t, watt):
     f2 = get_fatigue_func_by_idx(ub)
     for i in range(100):
         mid = (lb + ub)/2.
-        a = mid - lb
-        b = ub - mid
-        if watt < b*f1(t) + a*f2(t):
+        a = mid - int(mid)
+        b = int(mid+1) - mid
+        if ratio < b*f1(t) + a*f2(t):
             lb = mid
         else:
             ub = mid

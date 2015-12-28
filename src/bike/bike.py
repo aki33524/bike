@@ -1,6 +1,7 @@
 #coding:utf-8
 from crank import Crank
 from wheel import Wheel
+from fatigue.fatigue import get_fatigue_func_by_level, get_fatigue_func
 
 G = 9.8
 SPAN = 0.1
@@ -40,7 +41,6 @@ class Rider():
         return v * ((0.1 * x + 0.05) * M + 0.15 * (v+wv)**2)
     
     def get_fatigue_func(self):
-        from fatigue.fatigue import get_fatigue_func_by_level
         return get_fatigue_func_by_level(self.level)
     
     def acceleration(self, w, v, x=0):
@@ -76,12 +76,15 @@ class Rider():
                 ub = mid
         return mid
     
-    def get_time_by_splitted_course(self, splitted):
+    def get_time_by_splitted_course(self, splitted, watt=None):
         lb = 0
         ub = 10000
-        for _ in range(20):
+        for _ in range(30):
             mid = (lb + ub) / 2.
-            w = self.fatigue_func(mid) * self.weight
+            if watt is None:
+                w = self.fatigue_func(mid) * self.weight
+            else:
+                w = watt
             t = 0
             vel = 0
             for v in splitted:
@@ -90,6 +93,10 @@ class Rider():
                     vel += self.acceleration(w, vel, v[1] * 100. / v[0]) * SPAN
                     d += vel * SPAN
                     t += SPAN
+                    
+            if watt is not None:
+                return t
+                    
             if mid < t:
                 lb = mid
             else:
@@ -97,14 +104,17 @@ class Rider():
         return mid
     
     def get_watt_by_splitted_course(self, alltime, splitted):
-        # FIXME: 重い
         lb = 0
-        ub = 10000
-        for _ in range(100):
+        ub = 30 * self.weight
+        for _ in range(30):
             mid = (lb + ub) / 2.
-            t = self.get_time_by_splitted_course(splitted)
+            t = self.get_time_by_splitted_course(splitted, mid)
             if t > alltime:
                 lb = mid
             else:
                 ub = mid
         return mid
+    
+    def get_level(self, t, watt):
+        return get_fatigue_func(t, float(watt)/self.weight)[:2]
+        
