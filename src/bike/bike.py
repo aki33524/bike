@@ -105,7 +105,7 @@ class Rider(object):
                     ub = mid
                 else:
                     lb = mid
-            if lb + 1 != len(sprocket) and abs(gear-float(sprocket[lb]) / front_gear) > abs(gear-float(sprocket[lb+1]) / front_gear):
+            if lb + 1 != len(sprocket) and abs(gear - front_gear/float(sprocket[lb])) > abs(gear - front_gear/float(sprocket[lb+1])):
                 lb = lb + 1
             return lb
         
@@ -133,27 +133,28 @@ class Rider(object):
                 
             gear_change.append((t, (self._front_gear, self._rear_gear)))
         
-        ratio = v / (2*pi*R * self.cadence/60 * crank[self._front_gear]/sprocket[self._rear_gear])
-        if self._front_gear == 0 and self._rear_gear == len(sprocket)-1 and ratio > 1:
-#             if self._lowgear > ratio:
-#                 print t, self._lowgear
-            self._lowgear = max(self._lowgear, ratio)
-        if self._front_gear == 1 and self._rear_gear == 0 and ratio < 1:
-            self._topgear = min(self._topgear, ratio)
+        ratio = v / (2*pi*R * self.cadence/60. * crank[self._front_gear]/sprocket[self._rear_gear])
+        if self._front_gear == 0 and self._rear_gear == len(sprocket)-1 and ratio < 1:
+            self._lowgear = min(self._lowgear, ratio)
+        if self._front_gear == 1 and self._rear_gear == 0 and ratio > 1:
+            self._topgear = max(self._topgear, ratio)
             
     def get_time_by_splitted_course(self, splitted, watt=None):
         def get_message():
             crank = self.bicycle.crank.chainrings
-            sprocket = self.bicycle.sprocket.chainrings       
+            sprocket = self.bicycle.sprocket.chainrings
+            print self._lowgear, self._topgear 
             message = ""
             if self._lowgear != 1:
                 ratio = self._lowgear
-                message = "ローギア足りてねえ！" +\
-                    "フロントを%dにするかリアを%dにしろ💢\n" % (int(crank[0] / ratio), int(sprocket[-1] * ratio + 1))
+                message += "ローギア足りてねえ！" +\
+                    "フロントを%dにするかリアを%dにしろ💢もしくはケイデンス%f💢\n" %\
+                    (int(crank[0] * ratio), int(sprocket[-1] / ratio + 1), self.cadence * ratio)
             if self._topgear != 1:
                 ratio = self._topgear
-                message = "トップギア足りてねえ!" +\
-                    "フロントを%dにするかリアを%dにしろ💢\n" % (int(crank[1] / ratio + 1), int(sprocket[0] * ratio))
+                message += "トップギア足りてねえ!" +\
+                    "フロントを%dにするかリアを%dにしろ💢もしくはケイデンス%f💢\n" %\
+                    (int(crank[1] * ratio + 1), int(sprocket[0] / ratio), self.cadence * ratio)
             return message[:-1]
             
         lb = 0
