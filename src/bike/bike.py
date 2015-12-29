@@ -1,5 +1,6 @@
 #coding:utf-8
-from fatigue.fatigue import get_fatigue_func_by_level, get_fatigue_func
+from fatigue.fatigue import get_fatigue_func_by_level,\
+    get_capability, get_level
 
 G = 9.8
 SPAN = 0.1
@@ -207,25 +208,28 @@ class Rider(object):
 
         return mid, gear_change, verbose_data, get_message()
     
-    def get_watt_by_splitted_course(self, alltime, splitted):
+    def get_watt_by_splitted_course(self, t, splitted, setlevel=True):
         lb = 0
         ub = 30 * self.weight
         for _ in range(30):
             mid = (lb + ub) / 2.
-            t, gear_change, verbose_data, message = self.get_time_by_splitted_course(splitted, mid)
-            if t > alltime:
+            tt, gear_change, verbose_data, message = self.get_time_by_splitted_course(splitted, mid)
+            if tt > t:
                 lb = mid
             else:
                 ub = mid
-        return mid, message
-    
-    def set_level(self, t, watt):
-        levels, txt , func = get_fatigue_func(t, float(watt)/self.weight)
-        self.level = levels[1]
-        print self.level
-        return levels, txt
+        watt = mid
+        
+        if setlevel:
+            level = get_level(t, float(watt)/self.weight)
+            self.level = level
+        return watt, gear_change, verbose_data, message
     
     @property
     def fatigue_func(self):
         return get_fatigue_func_by_level(self.level)
+    
+    @property
+    def capability(self):
+        return get_capability(self.level)
         

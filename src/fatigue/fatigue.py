@@ -3,7 +3,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 from __init__ import WEIGHT_POWER_RATIO, LEVEL
 
-def get_fatigue_func_by_idx(idx):
+def get_fatigue_func_by_level_idx(idx):
     def model_func1(x, a, b):
         return a * np.power(x, b)
     
@@ -47,19 +47,19 @@ def get_fatigue_func_by_level(level):
     b = int(level+1) - level
         
     def func(t):
-        f1 = get_fatigue_func_by_idx(int(level))
-        f2 = get_fatigue_func_by_idx(int(level+1))
+        f1 = get_fatigue_func_by_level_idx(int(level))
+        f2 = get_fatigue_func_by_level_idx(int(level+1))
         return b*f1(t) + a*f2(t)
     
     return func
 
-def get_fatigue_func(t, ratio):
+def get_level(t, ratio):
     lb = 0
     ub = len(WEIGHT_POWER_RATIO)
     
     while lb + 1 < ub:
         mid = (lb + ub)/2
-        if ratio < get_fatigue_func_by_idx(mid)(t):
+        if ratio < get_fatigue_func_by_level_idx(mid)(t):
             lb = mid
         else:
             ub = mid
@@ -69,8 +69,8 @@ def get_fatigue_func(t, ratio):
     if ub == len(WEIGHT_POWER_RATIO):
         raise "トレーニングして💢"
     
-    f1 = get_fatigue_func_by_idx(lb)
-    f2 = get_fatigue_func_by_idx(ub)
+    f1 = get_fatigue_func_by_level_idx(lb)
+    f2 = get_fatigue_func_by_level_idx(ub)
     for i in range(100):
         mid = (lb + ub)/2.
         a = mid - int(mid)
@@ -80,15 +80,16 @@ def get_fatigue_func(t, ratio):
         else:
             ub = mid
     
-    def func(t):
-        return b*f1(t) + a*f2(t)        
-    
+    return mid    
+
+def get_capability(level):
     for i, v in enumerate(LEVEL):
-        if mid < v[0]:
+        if level < v[0]:
             if i == 0:
-                return (0, mid, LEVEL[i][0]), "〜 " + v[1], func
+                return (0, level, LEVEL[i][0]), "〜 " + v[1]
             else:
-                return (LEVEL[i-1][0], mid, LEVEL[i][0]), LEVEL[i-1][1] + " 〜 " + LEVEL[i][1], func
-    return (LEVEL[-1][0], mid, len(WEIGHT_POWER_RATIO)-1), LEVEL[-1][1] + " 〜", func
-            
+                return (LEVEL[i-1][0], level, LEVEL[i][0]), LEVEL[i-1][1] + " 〜 " + LEVEL[i][1]
+    return (LEVEL[-1][0], level, len(WEIGHT_POWER_RATIO)-1), LEVEL[-1][1] + " 〜"
+ 
+    
     

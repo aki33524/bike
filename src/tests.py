@@ -24,19 +24,19 @@ class TestSequenceFunctions(unittest.TestCase):
         self.rider = Rider(farna700tiagra, 170, 55)
     
     def test_get_watt_by_splitted_course(self):
-        """コースとタイムからレベルを算出する"""
+        """コースとタイムからレベルを算出する デフォルトではレベル設定も行う"""
         points = google.get_points(get_filepath("googledata/katsuoji.txt"))
         sections = points_to_sections(interpolation(points))
-        watt, message = self.rider.get_watt_by_splitted_course(self.time, sections)
+        watt, gear_change, verbose_data, message = self.rider.get_watt_by_splitted_course(self.time, sections)
 #         print watt
 #         print message
     
-    def test_set_level(self):
-        """タイムとワット数からレベルを算出する"""
-        levels, txt = self.rider.set_level(self.time, self.watt)
-#         print txt
-#         print levels
-    
+    def test_capability(self):
+        """レベルから実力を算出する"""
+        self.rider.level = self.level
+        levels, text = self.rider.capability
+#         print levels, text
+        
     def test_get_time_by_splitted_course(self):
         """コースとレベルからタイムを算出する"""
         # Thanks to http://latlonglab.yahoo.co.jp/route/watch?id=f9b389b9434df4292d74a5a94c9a7ea9
