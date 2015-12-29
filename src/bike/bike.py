@@ -1,7 +1,4 @@
 #coding:utf-8
-from crank import Crank
-from wheel import Wheel
-from sprocket import Sprocket
 from fatigue.fatigue import get_fatigue_func_by_level, get_fatigue_func
 
 G = 9.8
@@ -9,6 +6,8 @@ SPAN = 0.1
         
 class Bicycle(object):
     def __init__(self, front_weight, rear_weight, front_wheel, rear_wheel, crank, sprocket):
+#         FIXME: 正しく構造化が行われていない（フレームやハンドルを分けていない）ために
+#                crankやwheelだけ変えても全体重量に反映されない
         self.front_weight = front_weight
         self.rear_weight = rear_weight
         self.front_wheel = front_wheel
@@ -17,14 +16,12 @@ class Bicycle(object):
         self.sprocket = sprocket
         
 class Rider(object):
-    def __init__(self, height, weight, level, bicycle, cadence=90):
-        self.cadence = cadence
+    def __init__(self, bicycle, height, weight, cadence=90, level=None):
+        self.bicycle = bicycle
         self.height = height
         self.weight = weight
-        self.bicycle = bicycle
         self._level = level
-        self.fatigue_func = self.get_fatigue_func()
-        
+        self.cadence = cadence
         
     @property
     def front_weight(self):
@@ -44,14 +41,13 @@ class Rider(object):
         return v * ((0.1 * x + 0.05) * M + 0.15 * (v+wv)**2)
     
     def _get_level(self):
+        if self._level is None:
+            raise "レベルが設定されてない💢"
+        
         return self._level
     def _set_level(self, value):
         self._level = value
-        self.fatigue_func = self.get_fatigue_func()
     level = property(_get_level, _set_level)
-    
-    def get_fatigue_func(self):
-        return get_fatigue_func_by_level(self.level)
     
     def acceleration(self, w, v, x=0):
         if v < 0:
@@ -223,6 +219,13 @@ class Rider(object):
                 ub = mid
         return mid, message
     
-    def get_level(self, t, watt):
-        return get_fatigue_func(t, float(watt)/self.weight)[:2]
+    def set_level(self, t, watt):
+        levels, txt , func = get_fatigue_func(t, float(watt)/self.weight)
+        self.level = levels[1]
+        print self.level
+        return levels, txt
+    
+    @property
+    def fatigue_func(self):
+        return get_fatigue_func_by_level(self.level)
         
