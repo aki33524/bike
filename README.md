@@ -10,6 +10,7 @@
 # Required
 * numpy
 * scipy
+* googlemaps
 
 # Sample
 tests.pyが良いサンプルコードです。これを参考にしてください。
