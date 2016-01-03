@@ -3,10 +3,9 @@ import googlemaps
 
 # TODO:座標から自動コンバート
 
-def get_points(filename, resolution=9):
+def get_points(filename, resolution=0):
     # FIXME: 本来elevation apiを用いた時はresolutionが取れるのでこれは不要
     f = open(filename)
-    resolution = 9
     
     points = []
     for line in f.readlines():

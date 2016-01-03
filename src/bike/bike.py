@@ -177,6 +177,7 @@ class Rider(object):
             self._front_gear = len(self.bicycle.crank.chainrings) - 1
             self._rear_gear =  len(self.bicycle.sprocket.chainrings)/2
             gear_change.append((t, (self._front_gear, self._rear_gear), ""))
+            alld = 0
             for v in splitted:
                 d = 0
                 pacceleration = -1
@@ -195,8 +196,9 @@ class Rider(object):
                     grad = v[1] * 100. / v[0]
                     vel += self.acceleration(w, vel, grad) * SPAN
                     d += vel * SPAN
+                    alld += vel * SPAN
                     t += SPAN
-                    self.add_gear_change(gear_change, verbose_data, vel, t, grad, d)
+                    self.add_gear_change(gear_change, verbose_data, vel, t, grad, alld)
                                         
             if watt is not None:
                 return t,  gear_change, verbose_data, get_message()
