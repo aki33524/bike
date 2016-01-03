@@ -1,72 +1,53 @@
 #coding:utf-8
 from misc import hubeny
 
+def calcDeg(ax, ay, bx, by, cx, cy):
+    # 反時計回り
+    return (by-ay)*(cx-ax)-(bx-ax)*(cy-ay) > 0
+
 def interpolation(points):
-    # FIXM: pointsが変わる副作用がある
-    num = len(points)
+    N = len(points)
     
-    distances = [0]*num
-    for i in range(1, num):
-        distances[i] = distances[i-1] + hubeny(points[i-1][1], points[i][1])
-    for i in range(num):
-        points[i][1] = distances[i]
+    dist = [0]*N
+    for i in range(1, N):
+        dist[i] = dist[i-1] + hubeny(points[i-1][1], points[i][1])
     
-    start, goal = sum(points[0][0])/2, sum(points[num-1][0])/2
-    L = []
-    R = []
-    for i in range(num):
-        L.append(points[i][0][1])
-        R.append(points[i][0][0])
-        
-    length = 0
-    last_point = (start, length)
-    ly = ry = 0
-    l1 = L[ly] - last_point[0]
-    r1 = R[ry] - last_point[0]
-    ny = 1
+    start, goal = sum(points[0][0])/2, sum(points[-1][0])/2
+    L = [p[0][1] for p in points]
+    R = [p[0][0] for p in points]
+    L.append(goal)
+    R.append(goal)
     
+    total = 0
+    ax = 0
+    ay = start
     sections = []
-    sections.append((last_point[0], length))
-    while ny < num:
-        l2 = float(L[ny] - last_point[0]) / (points[ny][1] - points[last_point[1]][1])
-        r2 = float(R[ny] - last_point[0]) / (points[ny][1] - points[last_point[1]][1])
-        if r1 <= l2:
-            length += ((R[ry] - last_point[0]) ** 2 + (points[ry][1] - points[last_point[1]][1]) ** 2) ** 0.5
-            sections.append((R[ry], length))
-            last_point = (R[ry], ry)
-            ry = ly = ry + 1
-            l1 = L[ry] - last_point[0]
-            r1 = R[ry] - last_point[0]
-            ny = ry
-        elif r2 <= l1:
-            length += ((L[ly] - last_point[0]) ** 2 + (points[ly][1] - points[last_point[1]][1]) ** 2) ** 0.5
-            sections.append((L[ly], length))
-            last_point = (L[ly], ly)
-            ly = ry = ly + 1
-            l1 = L[ly] - last_point[0]
-            r1 = R[ry] - last_point[0]
-            ny = ly
-        else:
-            if l1 <= l2:
-                ly = ny
-                l1 = l2
-            if r2 <= r1:
-                ry = ny
-                r1 = r2
-        ny += 1
-    g = float(goal - last_point[0]) / (points[num-1][1] - points[last_point[1]][1])
-    if r1 <= g:
-        length += ((R[ry] - last_point[0]) ** 2 + (points[ry][1] - points[last_point[1]][1]) ** 2) ** 0.5
-        sections.append((R[ry], length))
-        last_point = (R[ry], ry)
-    elif g <= l1:
-        length += ((L[ly] - last_point[0]) ** 2 + (points[ly][1] - points[last_point[1]][1]) ** 2) ** 0.5
-        sections.append((L[ly], length))
-        last_point = (L[ly], ly)
-    length += ((goal - last_point[0]) ** 2 + (points[num-1][1] - points[last_point[1]][1]) ** 2) ** 0.5
-    sections.append((goal, length))
+    sections.append((ay, total))
+    x = ax + 1
+    lx = x
+    rx = x
+    
+    while x < N:
+        bx = 0
+        by = 0
+        if not calcDeg(dist[ax], ay, dist[lx], L[lx], dist[x], L[x]):
+            lx = x
+            if rx < x and not calcDeg(dist[ax], ay, dist[rx], R[rx], dist[x], L[x]):
+                bx = rx
+                by = R[rx]
+        if calcDeg(dist[ax], ay, dist[rx], R[rx], dist[x], R[x]):
+            rx = x
+            if lx < x and calcDeg(dist[ax], ay, dist[lx], L[lx], dist[x], R[x]):
+                bx = lx
+                by = L[lx]
+        if bx != 0:
+            total += ((dist[bx]-dist[ax])**2 + (by-ay)**2) ** 0.5
+            sections.append((by, total))
+            ax = bx
+            ay = by
+            lx = rx = x = ax + 1
+        x += 1
+        
+    total += ((dist[ax]-dist[-1])**2 + (ay-goal)**2) ** 0.5
+    sections.append((goal, total))
     return sections
-    
-    
-    
-    
