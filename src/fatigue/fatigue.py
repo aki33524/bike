@@ -1,45 +1,60 @@
 #coding:utf-8
-import numpy as np
-from scipy.optimize import curve_fit
 from __init__ import WEIGHT_POWER_RATIO, LEVEL
+from math import factorial as fac
 
+def binomial(x, y):
+    try:
+        binom = fac(x) // fac(y) // fac(x - y)
+    except ValueError:
+        binom = 0
+    return binom
+
+def bezier(points, t):
+    N = len(points)
+    sx = 0
+    sy = 0
+    for i in range(N):
+        sx += points[i][0] * binomial(N-1,i) * t**i * (1-t)**(N-1-i)
+        sy += points[i][1] * binomial(N-1,i) * t**i * (1-t)**(N-1-i)
+        
+    return (sx, sy)
+    
 def get_fatigue_func_by_level_idx(idx):
-    def model_func1(x, a, b):
-        return a * np.power(x, b)
+    x = [5, 60, 300, 3600]
+    y = WEIGHT_POWER_RATIO[idx]
+    N = len(x)
+    l = []
+    for i in range(N-2):
+        c1 = (y[i+2] - y[i]) / (x[i+2] - x[i])
+        c2 = y[i+1] - x[i+1]*c1
+        l.append((c1, c2))
+    points = []
+    points.append((x[0], l[0][0]*x[0]+l[0][1]))
+    for i in range(len(l)-1):
+        xt = -(l[i][1] - l[i+1][1]) / (l[i][0]-l[i+1][0])
+        yt = l[i][0]*xt + l[i][1]
+        points.append((xt, yt))
+    points.append(((y[-1]-l[-1][1])/l[-1][0], y[-1]))
     
-    def model_func2(x, a, b):
-        return a * np.log(x) + b
-    
-    xx = [5, 60, 300, 10000]
-    yy = WEIGHT_POWER_RATIO[idx]
-    x = np.array(xx[:3])
-    y = np.array(yy[:3])
-    
-    popt1, pcov = curve_fit(model_func1, x, y)
-    y1 = model_func1(x, *popt1)
-    
-    popt2, pcov = curve_fit(model_func2, x, y)
-    y2 =  model_func2(x, *popt2)
-    
-    a, b = 0, 1
-    for i in range(100):
-        c1, c2 = (a + b) / 3., (a + b) * 2 / 3.
-        error1 = sum((c1*y1 + (1-c1)*y2 - y) ** 2)
-        error2 = sum((c2*y1 + (1-c2)*y2 - y) ** 2)
-        if error1 > error2:
-            a = c2
+    def func(t):
+        if t < x[0]:
+            return y[0]
+        elif x[-1] < t:
+            return y[-1]
         else:
-            b = c1
-            
-    def func(x):
-        if x < 0:
-            raise "正の時間運動しろ💢"
-        elif x < xx[2]:
-            return a*model_func1(x, *popt1) + (1-a)*model_func2(x, *popt2)
-        elif x < xx[3]:
-            return (x - xx[2]) * (yy[3] - yy[2]) /(xx[3] - xx[2]) + yy[2]
-        else:
-            return yy[3]
+            for i in range(N):
+                if t < x[i]:
+                    break
+            lb, ub = 0, 1
+            for _ in range(30):
+                mid = (lb + ub) / 2.
+                p = bezier(((x[i-1], y[i-1]), points[i-1], (x[i], y[i])), mid)
+                if p[0] < t:
+                    lb = mid
+                else:
+                    ub = mid
+            return p[1]
+                    
     return func
 
 def get_fatigue_func_by_level(level):
@@ -90,6 +105,3 @@ def get_capability(level):
             else:
                 return (LEVEL[i-1][0], level, LEVEL[i][0]), LEVEL[i-1][1] + " 〜 " + LEVEL[i][1]
     return (LEVEL[-1][0], level, len(WEIGHT_POWER_RATIO)-1), LEVEL[-1][1] + " 〜"
- 
-    
-    
