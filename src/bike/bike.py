@@ -1,6 +1,7 @@
 #coding:utf-8
 from fatigue.fatigue import get_fatigue_func_by_level,\
     get_capability, get_level
+import math
 
 G = 9.8
 SPAN = 0.1
@@ -34,9 +35,43 @@ class Rider(object):
     def all_weight(self):
         return self.weight + self.bicycle.front_weight + self.bicycle.rear_weight
     @property
-    def K(self):
-        # 空気抵抗係数 温度と表面積（身長体重から割り出せる？）に依存する
-        return 0.15
+    def CdA(self):
+        # FIXME: 諸々設定可能にする
+        myInclin = 30   # 胴角度30度
+        dress = 1.15    # 冬服
+        w = 28          # ロードバイク
+        airTemp = 10    # 気温
+        
+        BMI = self.weight / ((self.height*0.01) ** 2)
+        bodyIndex = (BMI/22) ** 0.5
+        heightIndex = self.height/170.
+        trunkAngle = math.pi*myInclin/180.
+        
+        faceW = 0.14
+        shoulderW = 0.45
+        shoulderT = 0.12
+        trunkW = 0.4
+        arm2W = 0.16
+        leg2W = 0.24
+        
+        faceA = 0.12*0.01*self.height*heightIndex*faceW
+        shoulderA = heightIndex*shoulderW*heightIndex*shoulderT
+        trunkA = 0.4*0.01*self.height*heightIndex*trunkW
+        armA = 0.32*0.01*self.height*heightIndex*arm2W
+        legA = 0.45*0.01*self.height*heightIndex*leg2W
+        bodyA = faceA + trunkA*math.sin(trunkAngle) + shoulderA*math.cos(trunkAngle) + armA*math.sin(trunkAngle) + legA
+        myArea = bodyA*bodyIndex*dress
+        
+        # http://www.geocities.jp/jitensha_tanken/power_req.htmlでは
+        # tireDia*0.001*w*0.001;となっているがおそらく誤り
+        bicArea = self.bicycle.front_wheel.R*0.001+w*0.001
+        area = myArea + bicArea
+        
+        Cd = 0.5
+        density = 1.29*273/(273 + 1*airTemp)
+        
+        return Cd*density*area
+    
     def W(self, v, x, wv=0):
         M = self.all_weight
         return v * ((0.1 * x + 0.05) * M + 0.15 * (v+wv)**2)
@@ -68,7 +103,7 @@ class Rider(object):
             resistor += 0.005 * M * G   # 転がり抵抗
             
         resistor += 0.01 * x * M * G    # 傾斜抵抗
-        resistor += self.K * v**2       # 空気抵抗
+        resistor += self.CdA * v**2 / 2     # 空気抵抗
         
         I = self.bicycle.front_wheel.I + self.bicycle.rear_wheel.I #慣性モーメント
         
@@ -135,7 +170,7 @@ class Rider(object):
             self._lowgear = min(self._lowgear, ratio)
         if self._front_gear == 1 and self._rear_gear == 0 and ratio > 1:
             self._topgear = max(self._topgear, ratio)
-            
+        
         verbose_data.append({"time":t,
                             "velocity":v,
                             "gear":(self._front_gear, self._rear_gear),
