@@ -85,7 +85,7 @@ class Rider(object):
         self._level = value
     level = property(_get_level, _set_level)
     
-    def acceleration(self, w, v, x=0):
+    def acceleration(self, w, v, x=0, wv=0):
         if v < 0:
             raise Exception("バックするな💢")
         
@@ -103,7 +103,10 @@ class Rider(object):
             resistor += 0.005 * M * G   # 転がり抵抗
             
         resistor += 0.01 * x * M * G    # 傾斜抵抗
-        resistor += self.CdA * v**2 / 2     # 空気抵抗
+        if v+wv > 0:
+            resistor += self.CdA * (v+wv)**2 / 2    # 空気抵抗
+        else:
+            resistor -= self.CdA * (v+wv)**2 / 2
         
         I = self.bicycle.front_wheel.I + self.bicycle.rear_wheel.I #慣性モーメント
         
@@ -178,7 +181,7 @@ class Rider(object):
                             "grad":grad,
                             "distance":dist})
             
-    def get_time_by_splitted_course(self, splitted, watt=None):
+    def get_time_by_splitted_course(self, splitted, watt=None, wv=0):
         def get_message():
             crank = self.bicycle.crank.chainrings
             sprocket = self.bicycle.sprocket.chainrings
@@ -215,21 +218,9 @@ class Rider(object):
             alld = 0
             for v in splitted:
                 d = 0
-                pacceleration = -1
                 while d < v[0]:
-                    # 実用上問題ない誤差を含む
-                    # FIXME: verbose_dataがおかしくなるのでコメントアウトする
-#                     acceleration = self.acceleration(w, vel, v[1] * 100. / v[0])
-#                     if acceleration == pacceleration:
-#                         t += (v[0] - d) / vel
-#                         d = v[0]
-#                     else:
-#                         vel += acceleration * SPAN
-#                         d += vel * SPAN
-#                         t += SPAN
-#                     pacceleration = acceleration
                     grad = v[1] * 100. / v[0]
-                    vel += self.acceleration(w, vel, grad) * SPAN
+                    vel += self.acceleration(w, vel, grad, wv) * SPAN
                     d += vel * SPAN
                     alld += vel * SPAN
                     t += SPAN
@@ -245,12 +236,12 @@ class Rider(object):
 
         return mid, gear_change, verbose_data, get_message()
     
-    def get_watt_by_splitted_course(self, t, splitted, setlevel=True):
+    def get_watt_by_splitted_course(self, t, splitted, wv=0, setlevel=True):
         lb = 0
         ub = 30 * self.weight
         for _ in range(30):
             mid = (lb + ub) / 2.
-            tt, gear_change, verbose_data, message = self.get_time_by_splitted_course(splitted, mid)
+            tt, gear_change, verbose_data, message = self.get_time_by_splitted_course(splitted, mid, wv)
             if tt > t:
                 lb = mid
             else:
