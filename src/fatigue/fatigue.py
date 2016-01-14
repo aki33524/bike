@@ -1,6 +1,7 @@
 #coding:utf-8
 from __init__ import WEIGHT_POWER_RATIO, LEVEL
 from math import factorial as fac
+from copy import copy
 
 def binomial(x, y):
     try:
@@ -20,8 +21,12 @@ def bezier(points, t):
     return (sx, sy)
     
 def get_fatigue_func_by_level_idx(idx):
-    x = [5, 60, 300, 3600]
-    y = WEIGHT_POWER_RATIO[idx]
+    x = [0, 5, 60, 300, 3600, 3600*4]
+    y = copy(WEIGHT_POWER_RATIO[idx])
+    # 瞬間最大パワーは5秒の時の2倍と仮定
+    # 4時間のパワーはFTPの0.9倍とし、ここからは変化しないと仮定
+    y.insert(0, y[0]*2)
+    y.append(y[-1]*0.9)
     N = len(x)
     l = []
     for i in range(N-2):
@@ -101,7 +106,7 @@ def get_capability(level):
     for i, v in enumerate(LEVEL):
         if level < v[0]:
             if i == 0:
-                return (0, level, LEVEL[i][0]), "〜 " + v[1]
+                return (0, level, LEVEL[i][0]), "- " + v[1]
             else:
-                return (LEVEL[i-1][0], level, LEVEL[i][0]), LEVEL[i-1][1] + " 〜 " + LEVEL[i][1]
-    return (LEVEL[-1][0], level, len(WEIGHT_POWER_RATIO)-1), LEVEL[-1][1] + " 〜"
+                return (LEVEL[i-1][0], level, LEVEL[i][0]), LEVEL[i-1][1] + " - " + LEVEL[i][1]
+    return (LEVEL[-1][0], level, len(WEIGHT_POWER_RATIO)-1), LEVEL[-1][1] + " -"
