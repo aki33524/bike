@@ -4,6 +4,8 @@ from fatigue.fatigue import get_fatigue_func_by_level,\
 import math
 
 G = 9.8
+# FIXME: クラーン数によって動的定義？
+#        勾配を考慮した時に解像度が下がらないか
 SPAN = 0.1
         
 class Bicycle(object):
@@ -34,43 +36,15 @@ class Rider(object):
     @property
     def all_weight(self):
         return self.weight + self.bicycle.front_weight + self.bicycle.rear_weight
-    @property
-    def CdA(self):
-        # FIXME: 諸々設定可能にする
-        myInclin = 30   # 胴角度30度
-        dress = 1.15    # 冬服
-        w = 28          # ロードバイク
+    
+    def density(self, airTemp):
         airTemp = 10    # 気温
+        return 1.29*273/(273 + 1*airTemp)
         
-        BMI = self.weight / ((self.height*0.01) ** 2)
-        bodyIndex = (BMI/22) ** 0.5
-        heightIndex = self.height/170.
-        trunkAngle = math.pi*myInclin/180.
-        
-        faceW = 0.14
-        shoulderW = 0.45
-        shoulderT = 0.12
-        trunkW = 0.4
-        arm2W = 0.16
-        leg2W = 0.24
-        
-        faceA = 0.12*0.01*self.height*heightIndex*faceW
-        shoulderA = heightIndex*shoulderW*heightIndex*shoulderT
-        trunkA = 0.4*0.01*self.height*heightIndex*trunkW
-        armA = 0.32*0.01*self.height*heightIndex*arm2W
-        legA = 0.45*0.01*self.height*heightIndex*leg2W
-        bodyA = faceA + trunkA*math.sin(trunkAngle) + shoulderA*math.cos(trunkAngle) + armA*math.sin(trunkAngle) + legA
-        myArea = bodyA*bodyIndex*dress
-        
-        # http://www.geocities.jp/jitensha_tanken/power_req.htmlでは
-        # tireDia*0.001*w*0.001;となっているがおそらく誤り
-        bicArea = self.bicycle.front_wheel.R*0.001+w*0.001
-        area = myArea + bicArea
-        
-        Cd = 0.5
-        density = 1.29*273/(273 + 1*airTemp)
-        
-        return Cd*density*area
+    def CdA(self, v):
+#         https://www.strava.com/activities/324871569#7684085182
+#         からCdA値を推測。おそらく165cm/45kg程度だと思われる。
+        return (0.3813 * v ** -0.217) * (self.height/165.)**2
     
     def W(self, v, x, wv=0):
         M = self.all_weight
@@ -103,10 +77,11 @@ class Rider(object):
             resistor += 0.005 * M * G   # 転がり抵抗
             
         resistor += 0.01 * x * M * G    # 傾斜抵抗
-        if v+wv > 0:
-            resistor += self.CdA * (v+wv)**2 / 2    # 空気抵抗
-        else:
-            resistor -= self.CdA * (v+wv)**2 / 2
+        if v + wv != 0:
+            if v+wv > 0:
+                resistor += self.density(10) * self.CdA(v+wv) * (v+wv)**2 / 2    # 空気抵抗
+            else:
+                resistor -= self.density(10) * self.CdA(v+wv) * (v+wv)**2 / 2
         
         I = self.bicycle.front_wheel.I + self.bicycle.rear_wheel.I #慣性モーメント
         
